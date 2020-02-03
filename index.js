@@ -3,31 +3,11 @@ var parser = require('fast-xml-parser');
 
 
 
-var pathReference = 'datasets/ontofarm/references/cmt-conference.rdf';
+const pathReference = 'datasets/ontofarm/references/cmt-conference.rdf';
+const pathTool = 'datasets/ontofarm/tools/ALIN-cmt-conference.rdf';
 
-refMatches = computeReference(pathReference);
-
-
-var pathReference = 'datasets/ontofarm/references/cmt-conference.rdf';
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+//const refMatches = computeReference(pathReference);
+const toolMatches = computeTool(pathTool);
 
 
 
@@ -38,6 +18,10 @@ var pathReference = 'datasets/ontofarm/references/cmt-conference.rdf';
     ---------------- Functions ----------------
 */
 
+function computeTool(path){
+
+    console.log(RDFtoJson(path));
+}
 
 function computeReference(path){
     console.log();
