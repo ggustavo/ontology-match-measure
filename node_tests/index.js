@@ -1,5 +1,5 @@
-var fs = require('fs')
-var parser = require('fast-xml-parser');
+let fs = require('fs')
+let parser = require('fast-xml-parser');
 
 
 const pathReferencesFolder = 'datasets/ontofarm/references/';
@@ -8,9 +8,7 @@ const pathToolsFolder = 'datasets/ontofarm/tools/';
 const tools = ['ALIN','AML','DOME','Lily','LogMap','LogMapLt','ONTMAT1','SANOM','Wiktionary'];
 let totalTest = 0;
 
-
-var fs = require('fs');
-var stream = fs.createWriteStream("tests_dataset.csv");
+let stream = fs.createWriteStream("node_result.csv");
 const map_tools = {};
 
 //const toolMatches = computeMatches( pathToolsFolder + 'ALIN' + "-edas-sigkdd.rdf");
@@ -19,7 +17,7 @@ const map_tools = {};
 
 stream.once('open', function(fd) {
   
-    stream.write("Reference,Tool,Precision,Recall,F1\n");
+    stream.write("Reference,Tool,True Positive,False Positive,False Negative,Precision,Recall,F1\n");
 
     fs.readdirSync(pathReferencesFolder).forEach(file => {
         // console.log(file);
@@ -63,7 +61,11 @@ stream.once('open', function(fd) {
             
      
             totalTest++;
-            stream.write(file.toLowerCase() + "," + tools[i] + "," + measure.precision + "," + measure.recall + ","  + measure.f1 + "\n");
+            stream.write(file.toLowerCase() + "," + tools[i] + "," + 
+                measure.true_positives + "," +
+                measure.false_positives + "," +
+                measure.false_negatives + "," +
+                measure.precision + "," + measure.recall + ","  + measure.f1 + "\n");
             
             if( map_tools[ tools[i] ]  == null){
                 map_tools[ tools[i] ] = {
@@ -87,18 +89,42 @@ stream.once('open', function(fd) {
     console.log("\n\nTotal Test: " + totalTest)
 
 
+
+
+
     /*
     ---------------- AVG ----------------
     */
-   console.log("\n\n---------------- AVG ---------------- ")
-    for(let i = 0; i < tools.length; i++){
-        console.log("________________________________________")
-        console.log(tools[i] + " count:" + map_tools[ tools[i] ].count )
-        console.log("precision(avg): " +  roundToTwo(map_tools[ tools[i] ].precision_sum / map_tools[ tools[i] ].count))
-        console.log("recall(avg): " +  roundToTwo(map_tools[ tools[i] ].recall_sum / map_tools[ tools[i] ].count))
-        console.log("f1(avg): " +  roundToTwo(map_tools[ tools[i] ].f1_sum / map_tools[ tools[i] ].count))
-       
-    }
+
+   let avg_stream = fs.createWriteStream("node_avg_result.csv");
+
+   avg_stream.once('open', function(fd) {
+  
+        avg_stream.write("Tool,avg(precision),avg(recall),avg(f1)\n");
+
+        console.log("\n\n---------------- AVG ---------------- ");
+        for(let i = 0; i < tools.length; i++){
+            console.log("________________________________________")
+            console.log(tools[i] + " count:" + map_tools[ tools[i] ].count )
+            console.log("precision(avg): " +  roundToTwo(map_tools[ tools[i] ].precision_sum / map_tools[ tools[i] ].count))
+            console.log("recall(avg): " +  roundToTwo(map_tools[ tools[i] ].recall_sum / map_tools[ tools[i] ].count))
+            console.log("f1(avg): " +  roundToTwo(map_tools[ tools[i] ].f1_sum / map_tools[ tools[i] ].count))
+            
+            avg_stream.write(
+                tools[i] + "," +
+                roundToTwo(map_tools[ tools[i] ].precision_sum / map_tools[ tools[i] ].count) + "," +
+                roundToTwo(map_tools[ tools[i] ].recall_sum / map_tools[ tools[i] ].count) + "," +
+                roundToTwo(map_tools[ tools[i] ].f1_sum / map_tools[ tools[i] ].count)
+                + "\n");
+
+        }
+
+
+        avg_stream.end();
+   });
+
+
+
 });
 
 
@@ -162,12 +188,19 @@ function intersect(refMatches, toolMatches){
     const matches = [];                                                 
     for(let i = 0; i < refMatches.length; i++){
         for(let j = 0; j < toolMatches.length; j++){
+            /*
             if( refMatches[i].entity1.toLowerCase() === toolMatches[j].entity1.toLowerCase() && 
                 refMatches[i].entity2.toLowerCase() === toolMatches[j].entity2.toLowerCase()){
                     //printMatch(refMatches[i]);
                     //if(toolMatches[j].measure >= 1){
                         matches.push(refMatches[i]);
                     //}
+            }
+            */
+            if( refMatches[i].entity1 === toolMatches[j].entity1 && 
+                refMatches[i].entity2 === toolMatches[j].entity2){
+                   matches.push(refMatches[i]);
+
             }
         }    
     }    
@@ -204,17 +237,17 @@ function RDFtoJson(path){
         return null;
     }
 
-    var data = fs.readFileSync(path, 'utf8');
+    let data = fs.readFileSync(path, 'utf8');
    
     if( parser.validate(data) === true) { 
         
-        var options = {
+        let options = {
           
             ignoreAttributes : false
           
         };    
         
-        var jsonObj = parser.parse(data,options);
+        let jsonObj = parser.parse(data,options);
         return jsonObj;
     }else{
         console.log("=========== Parse Error! ===========");
